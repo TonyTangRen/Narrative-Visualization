@@ -31,10 +31,9 @@
   <h1>New York State Covid-19 Case Number</h1>
   <svg id="chart" width="800" height="600"></svg>
   <div class="annotation" id="annotation"></div>
-  <div>
-    <button onclick="showStatus(1)">Show Case in 2020</button>
-    <button onclick="showStatus(2)">Show Case in 2021</button>
-    <button onclick="showStatus(3)">Show Case in 2022</button>
+  <div id="action" status="1">
+    <button onclick="previousStatus()">Previous Year</button>
+    <button onclick="nextStatus()">Next Year</button>
   </div>
   <div class="tooltip" id="tooltip"></div>
 
@@ -191,6 +190,26 @@
     function hideTooltip() {
       // Select the tooltip element and hide it
       d3.select("#tooltip").style("opacity", 0);
+    }
+
+    function nextStatus() {
+      var currentStatus = d3.select("#action").attr("status");
+      currentStatus = parseInt(currentStatus);
+      if(currentStatus <= 2){
+        currentStatus = currentStatus + 1;
+        showStatus(currentStatus);
+        d3.select("#action").attr("status", currentStatus);
+      }
+    }
+
+    function previousStatus() {
+      var currentStatus = d3.select("#action").attr("status");
+      currentStatus = parseInt(currentStatus);
+      if(currentStatus >= 2){
+        currentStatus = currentStatus - 1;
+        showStatus(currentStatus);
+        d3.select("#action").attr("status", currentStatus);
+      }
     }
 
 
