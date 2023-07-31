@@ -1,12 +1,214 @@
+<!DOCTYPE html>
 <html>
-<script src='https://d3js.org/d3.v5.min.js'></script>
-<style> circle {fill: lightblue; stroke: black;} </style>
-<body onload='init()'>
-<svg width=300 height=300>
-<h1>Hello World</h1>
-</svg>
-<script>
-async function init() {}
-</script>
+<head>
+  <title>D3 Bar Chart with Annotations</title>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <style>
+    /* Add CSS styles for the tooltip */
+    .tooltip {
+      position: absolute;
+      padding: 8px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border-radius: 4px;
+      pointer-events: none; /* Prevent tooltip from blocking mouse events on bars */
+      opacity: 0; /* Initially hide the tooltip */
+    }
+    .annotation{
+    	margin-top: 10px;
+    	margin-bottom: 20px;
+    	width: 800px;
+    	text-align: center;
+    }
+    h1{
+    	width: 800px;
+    	text-align: center;
+    	margin-bottom: 0px;
+    }
+  </style>
+</head>
+<body>
+  <h1>New York State Covid-19 Case Number</h1>
+  <svg id="chart" width="800" height="600"></svg>
+  <div class="annotation" id="annotation"></div>
+  <div>
+    <button onclick="showStatus(1)">Show Case in 2020</button>
+    <button onclick="showStatus(2)">Show Case in 2021</button>
+    <button onclick="showStatus(3)">Show Case in 2022</button>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const data = [
+      { date: "2020-03", value: 6.7504 },
+      { date: "2020-04", value: 30.9696 },
+      { date: "2020-05", value: 37.4471 },
+      { date: "2020-06", value: 39.8142 },
+      { date: "2020-07", value: 41.9081 },
+      { date: "2020-08", value: 43.8831 },
+      { date: "2020-09", value: 46.3369 },
+      { date: "2020-10", value: 51.0171 },
+      { date: "2020-11", value: 65.2748 },
+      { date: "2020-12", value: 96.3647 },
+      { date: "2021-01", value: 140.8955 },
+      { date: "2021-03", value: 186.3912 },
+      { date: "2021-04", value: 204.6322 },
+      { date: "2021-05", value: 210.0109 },
+      { date: "2021-06", value: 211.3147 },
+      { date: "2021-07", value: 214.5309 },
+      { date: "2021-08", value: 227.2334 },
+      { date: "2021-09", value: 242.4535 },
+      { date: "2021-10", value: 255.5136 },
+      { date: "2021-11", value: 272.8612 },
+      { date: "2021-12", value: 339.5166 },
+      { date: "2022-01", value: 477.9854 },
+      { date: "2022-03", value: 497.3964 },
+      { date: "2022-04", value: 515.0193 },
+      { date: "2022-05", value: 540.4333 },
+      { date: "2022-06", value: 559.6869 },
+      { date: "2022-07", value: 579.9922 },
+      { date: "2022-08", value: 597.1989 },
+      { date: "2022-09", value: 610.9107 },
+      { date: "2022-10", value: 623.2565 },
+      { date: "2022-11", value: 637.0527 },
+      { date: "2022-12", value: 656.0495 }
+    ];
+
+    // Create an SVG element
+    const svg = d3.select("#chart");
+
+    // Set the margins
+    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+    const width = +svg.attr("width") - margin.left - margin.right;
+    const height = +svg.attr("height") - margin.top - margin.bottom;
+
+    // Create scales
+    const xScale = d3.scaleBand()
+      .domain(data.map(d => d.date))
+      .range([0, width])
+      .padding(0.1);
+
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.value)])
+      .range([height, 0]);
+
+    // Create the chart group
+    const chartGroup = svg.append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Function to update chart based on status
+    function showStatus(status) {
+      // Remove existing annotations
+      chartGroup.selectAll(".annotation").remove();
+
+      // Update data based on the selected status
+      let newData;
+      switch (status) {
+        case 1:
+          newData = data.filter(d => d.date.startsWith("2020"));
+          break;
+        case 2:
+          newData = data.filter(d => d.date.startsWith("2020") || d.date.startsWith("2021"));
+          break;
+        case 3:
+          newData = data;
+          break;
+        default:
+          newData = data;
+      }
+
+      // Add the bars to the chart
+      const bars = chartGroup.selectAll("rect")
+        .data(newData, d => d.date);
+
+      bars.enter()
+        .append("rect")
+        .attr("x", d => xScale(d.date))
+        .attr("y", height) // Start the bars from the bottom (height) initially
+        .attr("width", xScale.bandwidth())
+        .attr("height", 0) // Set the initial height to 0
+        .attr("fill", "steelblue")
+        .on("mouseover", showTooltip) // Call the showTooltip function on mouseover
+        .on("mouseout", hideTooltip)  // Call the hideTooltip function on mouseout
+        .merge(bars) // Merge new and existing bars for smooth transition
+        .transition() // Add transition
+        .duration(500)
+        .attr("y", d => yScale(d.value))
+        .attr("height", d => height - yScale(d.value))
+        .attr("opacity", d => {
+          // Set opacity based on the data year
+          if (status === 1 && d.date.startsWith("2020")) {
+            return 1;
+          } else if (status === 2 && d.date.startsWith("2021")) {
+            return 1;
+          } else if (status === 3 && d.date.startsWith("2022")) {
+            return 1;
+          } else {
+            return 0.5;
+          }
+        })
+        ;
+
+      bars.exit().attr("opacity", 0.5).remove();
+
+      // Add annotations based on status
+      let annotationText;
+      switch (status) {
+        case 1:
+          annotationText = "Case Number was low is 2020 and growed slowly.";
+          break;
+        case 2:
+          annotationText = "Case Number growed rapidly in first 3 months and last 2 months in 2021";
+          break;
+        case 3:
+          annotationText = "Case Number growed rapidly in the first 2 month and growed in stable rate in 2022";
+          break;
+        default:
+          annotationText = "";
+      }
+
+      d3.select("#annotation").text(annotationText)
+    }
+
+    // Define the showTooltip function
+    function showTooltip(d) {
+      // Calculate the position of the tooltip
+      const tooltipX = xScale(d.date) + xScale.bandwidth() / 2;
+      const tooltipY = yScale(d.value) - 10;
+
+      // Select the tooltip element
+      const tooltip = d3.select("#tooltip");
+
+      // Update the tooltip content and position
+      tooltip
+        .html(`Date: ${d.date}<br>Case Number: ${(d.value * 10000).toLocaleString()}`)
+        .style("left", tooltipX + "px")
+        .style("top", tooltipY + "px")
+        .style("opacity", 1); // Show the tooltip
+    }
+
+    // Define the hideTooltip function
+    function hideTooltip() {
+      // Select the tooltip element and hide it
+      d3.select("#tooltip").style("opacity", 0);
+    }
+
+
+    // Initialize the chart with status 1
+    showStatus(1);
+
+    // Add the x-axis
+    chartGroup.append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(xScale))
+      .selectAll("text")
+      .attr("transform", "rotate(-45)")
+      .style("text-anchor", "end");
+
+    // Add the y-axis
+    chartGroup.append("g")
+      .call(d3.axisLeft(yScale));
+
+  </script>
 </body>
 </html>
