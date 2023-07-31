@@ -25,6 +25,18 @@
     	text-align: center;
     	margin-bottom: 0px;
     }
+
+    .indicator{
+      display: inline-block;
+      padding: 5px 15px;
+      border: 1px solid black;
+      color: black;
+    }
+
+    .indicator.active{
+      background-color: gray;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -32,7 +44,10 @@
   <svg id="chart" width="800" height="600"></svg>
   <div class="annotation" id="annotation"></div>
   <div id="action" status="1">
-    <button onclick="nextStatus()">Next</button>
+    <div class="indicator active" status="1">2020</div>
+    <div class="indicator" status="2">2021</div>
+    <div class="indicator" status="3">2022</div>
+    <button onclick="nextStatus()">Next Year</button>
   </div>
   <div class="tooltip" id="tooltip"></div>
 
@@ -198,6 +213,11 @@
         currentStatus = currentStatus + 1;
         showStatus(currentStatus);
         d3.select("#action").attr("status", currentStatus);
+        d3.selectAll(".indicator").attr("class", "indicator")
+        d3.selectAll(".indicator")
+        .filter(function() {
+          return d3.select(this).attr("status") == currentStatus; 
+        }).attr("class", "indicator active")
       }
     }
 
